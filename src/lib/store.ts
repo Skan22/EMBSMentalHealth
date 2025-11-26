@@ -28,11 +28,36 @@ interface GameState {
   journalEntries: string[]; // stored gratitude entries
   questsCompleted: number;
   assessmentsCompleted: number;
+  sunlight: number;
+  streak: {
+    current: number;
+    max: number;
+    lastLoginDate: string | null;
+  };
+  inventory: string[];
+  equippedItems: {
+    hat?: string;
+    accessory?: string;
+  };
+  habitat: string;
+  safetyPlan: {
+    strategies: string[];
+    contacts: { name: string; phone: string }[];
+    message: string;
+  };
+  assessmentHistory: { date: string; type: 'sparkle' | 'energy' | 'mood'; score: number }[];
   // ----- Actions -----
   setPetName: (name: string) => void;
   updatePetStats: (stats: Partial<PetState>) => void;
   evolvePet: (stage: PetState['stage']) => void;
+  setHabitat: (habitat: string) => void;
+  updateSafetyPlan: (plan: Partial<GameState['safetyPlan']>) => void;
+  logAssessment: (type: 'sparkle' | 'energy' | 'mood', score: number) => void;
   addXP: (amount: number) => void;
+  addSunlight: (amount: number) => void;
+  processDailyStreak: () => void;
+  purchaseItem: (itemId: string, cost: number) => boolean;
+  equipItem: (slot: 'hat' | 'accessory', itemId: string) => void;
   addAchievement: (achievement: Omit<Achievement, 'unlockedAt'>) => void;
   addJournalEntry: (entry: string) => void;
   incrementQuestsCompleted: () => void;
@@ -61,15 +86,40 @@ export const useGameStore = create<GameState>()(
       journalEntries: [],
       questsCompleted: 0,
       assessmentsCompleted: 0,
+      sunlight: 0,
+      streak: {
+        current: 0,
+        max: 0,
+        lastLoginDate: null,
+      },
+      inventory: [],
+      equippedItems: {},
+      habitat: 'default',
+      safetyPlan: {
+        strategies: ['Take deep breaths', 'Drink some water', 'Hug a plushie'],
+        contacts: [],
+        message: 'You are safe and loved.',
+      },
+      assessmentHistory: [],
+
       // ----- Action implementations -----
       setPetName: (name) => set((state) => ({ pet: { ...state.pet, name } })),
       updatePetStats: (stats) => set((state) => ({ pet: { ...state.pet, ...stats } })),
       evolvePet: (stage) => set((state) => ({ pet: { ...state.pet, stage } })),
+      setHabitat: (habitat) => set(() => ({ habitat })),
+      updateSafetyPlan: (plan) => set((state) => ({ safetyPlan: { ...state.safetyPlan, ...plan } })),
+      logAssessment: (type, score) => set((state) => ({
+        assessmentHistory: [...state.assessmentHistory, { date: new Date().toISOString(), type, score }]
+      })),
       addXP: (amount) =>
         set((state) => {
           const newXP = state.pet.xp + amount;
           const currentLevel = state.pet.level;
           const xpNeeded = getXPForLevel(currentLevel);
+
+          // Also award sunlight proportional to XP (e.g., 1:1)
+          const newSunlight = state.sunlight + amount;
+
           if (newXP >= xpNeeded) {
             const newLevel = currentLevel + 1;
             const remainingXP = newXP - xpNeeded;
@@ -86,10 +136,59 @@ export const useGameStore = create<GameState>()(
                 stage: newStage,
                 evolutionPoints: state.pet.evolutionPoints + 50,
               },
+              sunlight: newSunlight,
             };
           }
-          return { pet: { ...state.pet, xp: newXP } };
+          return {
+            pet: { ...state.pet, xp: newXP },
+            sunlight: newSunlight
+          };
         }),
+      addSunlight: (amount) => set((state) => ({ sunlight: state.sunlight + amount })),
+
+      processDailyStreak: () => set((state) => {
+        const today = new Date().toISOString().split('T')[0];
+        const lastDate = state.streak.lastLoginDate;
+
+        // If already checked in today, do nothing
+        if (lastDate === today) return {};
+
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        let newCurrent = 1;
+        if (lastDate === yesterdayStr) {
+          newCurrent = state.streak.current + 1;
+        }
+
+        return {
+          streak: {
+            current: newCurrent,
+            max: Math.max(state.streak.max, newCurrent),
+            lastLoginDate: today,
+          },
+          // Bonus sunlight for keeping the streak
+          sunlight: state.sunlight + (newCurrent * 10)
+        };
+      }),
+
+      purchaseItem: (itemId, cost) => {
+        const state = get();
+        if (state.sunlight >= cost && !state.inventory.includes(itemId)) {
+          set({
+            sunlight: state.sunlight - cost,
+            inventory: [...state.inventory, itemId],
+          });
+          return true;
+        }
+        return false;
+      },
+
+      equipItem: (slot, itemId) => set((state) => ({
+        equippedItems: { ...state.equippedItems, [slot]: itemId }
+      })),
+
       addAchievement: (achievement) =>
         set((state) => ({
           achievements: [...state.achievements, { ...achievement, unlockedAt: new Date() }],

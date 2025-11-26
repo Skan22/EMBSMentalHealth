@@ -7,6 +7,7 @@ import { ArrowLeft, Trophy, Star, Heart, Target } from 'lucide-react'
 import Link from 'next/link'
 import { useGameStore, getXPForLevel } from '@/lib/store'
 import { UserAvatar } from '@/components/sanctuary/UserAvatar'
+import { MoodCalendar } from '@/components/stats/MoodCalendar'
 
 export default function StatsPage() {
     const { pet, questsCompleted, assessmentsCompleted } = useGameStore()
@@ -83,6 +84,11 @@ export default function StatsPage() {
                             </Card>
                         )
                     })}
+                </div>
+
+                {/* Mood Calendar */}
+                <div className="mb-6">
+                    <MoodCalendar />
                 </div>
 
                 {/* Activity Stats */}

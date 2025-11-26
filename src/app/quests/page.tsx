@@ -44,6 +44,7 @@ export default function QuestsPage() {
         addXP,
         incrementQuestsCompleted,
         incrementAssessmentsCompleted,
+        logAssessment,
         journalEntries,
     } = useGameStore();
 
@@ -80,6 +81,11 @@ export default function QuestsPage() {
             if (score >= 14) rec = 'Your BSDS score is elevated. You may benefit from a clinical follow‑up.';
         }
         setRecommendation(rec);
+
+        // Log the assessment
+        if (assessment) {
+            logAssessment(assessment as 'sparkle' | 'energy' | 'mood', score);
+        }
 
         const xpReward = 50;
         setEarnedXP(xpReward);

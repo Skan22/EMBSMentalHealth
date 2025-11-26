@@ -2,9 +2,14 @@
 
 import { motion } from 'framer-motion'
 import { useGameStore } from '@/lib/store'
+import { SHOP_ITEMS } from '@/lib/constants'
 
 export function BloomPet() {
-    const { pet } = useGameStore()
+    const { pet, equippedItems } = useGameStore()
+
+    // Find item icons
+    const hatIcon = SHOP_ITEMS.find(i => i.id === equippedItems.hat)?.icon
+    const accessoryIcon = SHOP_ITEMS.find(i => i.id === equippedItems.accessory)?.icon
 
     // Determine color based on track
     const getColor = () => {
@@ -44,12 +49,30 @@ export function BloomPet() {
                 {/* Face or details could go here */}
                 <div className="absolute inset-0 flex items-center justify-center">
                     {pet.stage !== 'EGG' && (
-                        <div className="flex space-x-8">
+                        <div className="flex space-x-8 relative">
                             <motion.div className="w-4 h-4 bg-black/50 rounded-full" animate={{ scaleY: [1, 0.1, 1] }} transition={{ repeat: Infinity, delay: 2, repeatDelay: 3, duration: 0.2 }} />
                             <motion.div className="w-4 h-4 bg-black/50 rounded-full" animate={{ scaleY: [1, 0.1, 1] }} transition={{ repeat: Infinity, delay: 2, repeatDelay: 3, duration: 0.2 }} />
+
+                            {/* Accessory (Glasses/Scarf) */}
+                            {accessoryIcon && (
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl pointer-events-none" style={{ marginTop: '10px' }}>
+                                    {accessoryIcon}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
+
+                {/* Hat */}
+                {hatIcon && (
+                    <motion.div
+                        className="absolute -top-12 left-1/2 -translate-x-1/2 text-6xl pointer-events-none"
+                        animate={{ rotate: [0, 5, -5, 0] }}
+                        transition={{ duration: 4, repeat: Infinity }}
+                    >
+                        {hatIcon}
+                    </motion.div>
+                )}
             </motion.div>
         </div>
     )

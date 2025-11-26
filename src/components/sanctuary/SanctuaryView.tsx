@@ -1,25 +1,46 @@
 'use client'
 
+import { useState } from 'react'
 import { BloomPet } from './BloomPet'
 import { InteractionMenu } from './InteractionMenu'
 import { LevelDisplay } from './LevelDisplay'
+import { ShopModal } from '@/components/shop/ShopModal'
+import { HabitatEditor } from '@/components/sanctuary/HabitatEditor'
+import { SafetyPlan } from '@/components/safety/SafetyPlan'
 import { useGameStore } from '@/lib/store'
+import { HABITATS } from '@/lib/constants'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, ShieldAlert } from 'lucide-react'
 
 export function SanctuaryView() {
-    const { pet } = useGameStore()
+    const { pet, habitat } = useGameStore()
+    const [isShopOpen, setIsShopOpen] = useState(false)
+    const [isHabitatOpen, setIsHabitatOpen] = useState(false)
+    const [isSafetyOpen, setIsSafetyOpen] = useState(false)
+
+    const currentHabitat = HABITATS.find(h => h.id === habitat) || HABITATS[0]
 
     return (
-        <div className="min-h-screen w-full bg-gradient-to-b from-blue-100 to-purple-200 flex flex-col items-center justify-between py-8 overflow-hidden">
+        <div className={`min-h-screen w-full ${currentHabitat.background} flex flex-col items-center justify-between py-8 overflow-hidden transition-colors duration-1000`}>
             <header className="w-full px-6 flex justify-between items-center z-10">
                 <LevelDisplay />
-                <Link href="/stats">
-                    <div className="bg-white/30 backdrop-blur-md px-4 py-2 rounded-full text-sm font-medium text-slate-700 shadow-sm hover:bg-white/40 transition-all cursor-pointer">
-                        {pet.name}
-                    </div>
-                </Link>
+
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="rounded-full shadow-md bg-red-500 hover:bg-red-600"
+                        onClick={() => setIsSafetyOpen(true)}
+                    >
+                        <ShieldAlert className="h-4 w-4 mr-1" /> SOS
+                    </Button>
+                    <Link href="/stats">
+                        <div className="bg-white/30 backdrop-blur-md px-4 py-2 rounded-full text-sm font-medium text-slate-700 shadow-sm hover:bg-white/40 transition-all cursor-pointer">
+                            {pet.name}
+                        </div>
+                    </Link>
+                </div>
             </header>
 
             <main className="flex-1 flex flex-col items-center justify-center w-full relative">
@@ -35,9 +56,21 @@ export function SanctuaryView() {
                             Start a Quest
                         </Button>
                     </Link>
+                    <Link href="/garden">
+                        <Button variant="outline" className="bg-white/50 hover:bg-white/70 text-slate-700 px-6 py-3 rounded-full shadow-sm ml-4">
+                            Visit Garden
+                        </Button>
+                    </Link>
                 </div>
-                <InteractionMenu />
+                <InteractionMenu
+                    onShopOpen={() => setIsShopOpen(true)}
+                    onHabitatOpen={() => setIsHabitatOpen(true)}
+                />
             </footer>
-        </div>
+
+            <ShopModal open={isShopOpen} onOpenChange={setIsShopOpen} />
+            <HabitatEditor open={isHabitatOpen} onOpenChange={setIsHabitatOpen} />
+            <SafetyPlan open={isSafetyOpen} onOpenChange={setIsSafetyOpen} />
+        </div >
     )
 }
